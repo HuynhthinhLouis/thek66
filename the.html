@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Quản Lý Thẻ Tri Ân K66</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Itim&family=Mali:wght@500;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        :root { --primary: #5c3a21; --bg: #f4f1ea; --accent: #d4a373; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: var(--bg); margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        
+        /* Form & Preview */
+        .card-panel { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h2 { color: var(--primary); margin-top: 0; border-bottom: 2px solid var(--bg); padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: 600; margin-bottom: 5px; font-size: 14px; }
+        input, textarea, select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; }
+        
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+        button { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .btn-save { background: var(--primary); color: white; }
+        .btn-save:hover { opacity: 0.9; }
+        .btn-download { background: #2b7a0b; color: white; }
+
+        /* Card Style */
+        #preview-container { background: #e9e5d9; padding: 40px; border-radius: 10px; display: flex; justify-content: center; align-items: center; min-height: 300px; }
+        .kraft-card {
+            width: 8.6cm; height: 5.4cm; background-color: #c0966a;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.12'/%3E%3C/svg%3E");
+            position: relative; box-shadow: 0 10px 20px rgba(0,0,0,0.2); overflow: hidden; padding: 20px; box-sizing: border-box;
+            font-family: 'Itim', cursive; color: #2c1a0e;
+        }
+        .kraft-card * { font-family: inherit; }
+        .inner-border { border: 1.5px dashed #6b4423; height: 100%; border-radius: 5px; padding: 15px; box-sizing: border-box; display: flex; flex-direction: column; }
+        .greeting { font-size: 20px; font-weight: bold; margin: 0 0 10px 0; }
+        .content { font-size: 17px; line-height: 1.4; flex-grow: 1; white-space: pre-wrap; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; }
+
+        /* History Section */
+        .history-panel { grid-column: 1 / span 2; background: white; padding: 25px; border-radius: 15px; margin-top: 20px; }
+        .history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-top: 15px; }
+        .history-item { 
+            border: 1px solid #eee; padding: 15px; border-radius: 10px; cursor: pointer; 
+            transition: 0.2s; background: #fafafa; position: relative;
+        }
+        .history-item:hover { border-color: var(--accent); background: #fffcf9; transform: translateY(-3px); }
+        .history-item strong { color: var(--primary); display: block; margin-bottom: 5px; }
+        .history-item p { font-size: 13px; color: #666; margin: 0; height: 36px; overflow: hidden; }
+        .history-item .date { font-size: 10px; color: #999; margin-top: 8px; text-align: right; }
+
+        @media (max-width: 800px) { .container { grid-template-columns: 1fr; } .history-panel { grid-column: 1; } }
+    </style>
+</head>
+<body>
+
+    <h1 style="text-align: center; color: var(--primary);">Hệ Thống Tri Ân Thầy Cô K66</h1>
+
+    <div class="container">
+        <div class="card-panel">
+            <h2>Thiết kế thẻ mới</h2>
+            <div class="form-group">
+                <label>Danh xưng</label>
+                <select id="title-select">
+                    <option value="cô">Cô</option>
+                    <option value="thầy">Thầy</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Tên Thầy/Cô</label>
+                <input type="text" id="teacher-name" placeholder="Ví dụ: Nguyễn Mai Anh">
+            </div>
+            <div class="form-group">
+                <label>Kiểu chữ viết tay</label>
+                <select id="font-family">
+                    <option value="'Itim', cursive">Itim (Nét phấn tròn)</option>
+                    <option value="'Mali', cursive">Mali (Đáng yêu)</option>
+                    <option value="'Patrick Hand', cursive">Patrick Hand (Nét bút mảnh)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Nội dung tâm thư</label>
+                <textarea id="message" placeholder="Gửi lời chúc tốt đẹp nhất đến Thầy/Cô..."></textarea>
+            </div>
+            <div class="btn-group">
+                <button class="btn-save" onclick="saveToSupabase()">Lưu vào hệ thống</button>
+                <button class="btn-download" onclick="downloadImage()">Tải ảnh xuống</button>
+            </div>
+        </div>
+
+        <div class="card-panel">
+            <h2>Xem trước thẻ</h2>
+            <div id="preview-container">
+                <div id="card-element" class="kraft-card">
+                    <div class="inner-border">
+                        <div class="greeting" id="view-greeting">K66 kính gửi cô...</div>
+                        <div class="content" id="view-content">Lời tri ân sẽ hiện ở đây...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="history-panel">
+            <h2>🗂️ Danh sách thẻ đã tạo (Xem lại)</h2>
+            <div id="history-grid" class="history-grid">
+                <p style="color: #999;">Đang tải dữ liệu...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Cấu hình Supabase
+        const SB_URL = "https://glfejarouhgwdcsavngy.supabase.co";
+        const SB_KEY = "sb_publishable_kALXLB4aSEm14FDegVMvsg_-l4ssuB1";
+        const supabaseClient = supabase.createClient(SB_URL, SB_KEY);
+
+        // DOM Elements
+        const inputName = document.getElementById('teacher-name');
+        const inputMessage = document.getElementById('message');
+        const selectTitle = document.getElementById('title-select');
+        const selectFont = document.getElementById('font-family');
+        const cardElem = document.getElementById('card-element');
+
+        // 1. Cập nhật Preview Real-time
+        function updatePreview() {
+            const title = selectTitle.value;
+            const name = inputName.value || "...";
+            document.getElementById('view-greeting').innerText = `K66 kính gửi ${title} ${name},`;
+            document.getElementById('view-content').innerText = inputMessage.value || "Nội dung tâm thư...";
+            cardElem.style.fontFamily = selectFont.value;
+        }
+
+        [inputName, inputMessage, selectTitle, selectFont].forEach(el => el.addEventListener('input', updatePreview));
+
+        // 2. Lưu thẻ vào Supabase
+        async function saveToSupabase() {
+            const dataToSave = {
+                title: selectTitle.value,
+                teacher_name: inputName.value.trim(),
+                message: inputMessage.value.trim(),
+                font_family: selectFont.value
+            };
+
+            if (!dataToSave.teacher_name || !dataToSave.message) {
+                alert("Vui lòng điền tên và nội dung!");
+                return;
+            }
+
+            const { error } = await supabaseClient.from('cards').insert([dataToSave]);
+
+            if (error) {
+                alert("Lỗi khi lưu: " + error.message);
+            } else {
+                alert("Đã lưu thẻ thành công!");
+                fetchCards(); // Tải lại danh sách
+            }
+        }
+
+        // 3. Tải danh sách thẻ từ Supabase
+        async function fetchCards() {
+            const grid = document.getElementById('history-grid');
+            const { data, error } = await supabaseClient
+                .from('cards')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                grid.innerHTML = "<p>Không thể tải dữ liệu.</p>";
+                return;
+            }
+
+            if (data.length === 0) {
+                grid.innerHTML = "<p>Chưa có thẻ nào được tạo.</p>";
+                return;
+            }
+
+            grid.innerHTML = "";
+            data.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `
+                    <strong>${item.title.toUpperCase()} ${item.teacher_name}</strong>
+                    <p>${item.message}</p>
+                    <div class="date">${new Date(item.created_at).toLocaleDateString('vi-VN')}</div>
+                `;
+                // Khi click vào item: Đổ dữ liệu ngược lại Form
+                div.onclick = () => {
+                    selectTitle.value = item.title;
+                    inputName.value = item.teacher_name;
+                    inputMessage.value = item.message;
+                    selectFont.value = item.font_family;
+                    updatePreview();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                };
+                grid.appendChild(div);
+            });
+        }
+
+        // 4. Tải ảnh xuống
+        function downloadImage() {
+            html2canvas(cardElem, { scale: 3, backgroundColor: null }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `TriAnK66_${inputName.value || 'ThayCo'}.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        }
+
+        // Khởi chạy ban đầu
+        updatePreview();
+        fetchCards();
+    </script>
+</body>
+</html>
